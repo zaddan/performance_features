@@ -61,6 +61,7 @@ class Profiler:
                 #TODO check err
                 if 'SYSTEMWIDE' in e:
                     e= e.split(':')[1]
+                    print("event name is" + str(e))
                 try:
                     err, encoding = perfmon.pfm_get_perf_event_encoding(e, perfmon.PFM_PLM0 | perfmon.PFM_PLM3, None, None)
                 except:
@@ -69,7 +70,7 @@ class Profiler:
                 ev_list.append(encoding)
             self.event_groups.append(ev_list)
 
-    def __create_events(self, pid):
+    def __create_events(self, pid, cpuid=0):
         """
             Create the events from the perf_event_attr groups
         """
@@ -99,13 +100,15 @@ class Profiler:
             else:
                 for e, e_name in zip(group,group_name):
                     if 'SYSTEMWIDE' in e_name:
-                        fd= perfmon.perf_event_open(e, -1, 0, -1, 0)
+                        fd= perfmon.perf_event_open(e, -1, cpuid, -1, 0)
                     else:
+                        print("not allowed")
+                        exit(0)
                         e.exclude_kernel = 1
                         e.exclude_hv = 1
                         e.inherit= 1
                         e.disabled= 1
-                        fd= perfmon.perf_event_open(e, pid, -1, -1, 0)
+                        fd= perfmon.perf_event_open(e, -1, cpuid, -1, 0)
 
                     if fd < 0: 
                         raise Exception("Erro creating fd "+e_name)
@@ -234,11 +237,11 @@ class Profiler:
             data+=raw
         return data
 
-    def start_counters(self, pid):
+    def start_counters(self, pid, cpuid=0):
         """
             Reset and start the counters
         """
-        self.__create_events(pid)
+        self.__create_events(pid, cpuid)
         self.reset_events()
         self.enable_events()
 
